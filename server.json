@@ -1,0 +1,16 @@
+tools = [
+    {
+        "name": "read_file",
+        "description": "Lee archivos del proyecto",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"}
+            }
+        }
+    },
+    {
+        "name": "run_command",
+        "description": "Ejecuta comandos en terminal"
+    }
+]
