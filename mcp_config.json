@@ -1,0 +1,9 @@
+{
+    "mcpServers": {
+      "michelson": {
+        "command": "python",
+        "args": ["DEV_MCP_ASSISTANT/server.py"]
+      }
+    }
+  }
+  
