@@ -36,3 +36,17 @@ npx @modelcontextprotocol/inspector python server.py
 |improve existing code	|Tool improve_contract + Prompt improve_michelson_code|
 |deep bug/warnings analysis |	Tool analyze_contract|
 |security audit|	Prompt review_contract_security |
+
+
+cursor
+
+```
+{
+  "mcpServers": {
+    "michelson": {
+      "command": "/home/david/Documentos/projects/DEV_MCP_ASSISTANT/venv/bin/python",
+      "args": ["/home/david/Documentos/projects/DEV_MCP_ASSISTANT/server.py"]
+    }
+  }
+}
+```
