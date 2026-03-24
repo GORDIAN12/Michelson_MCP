@@ -126,6 +126,79 @@ def michelson_types_resource() -> str:
         lines.append(f"## {typ}\n{desc}\n")
     return "\n".join(lines)
 
+@mcp.resource("michelson://rules")
+def michelson_rules() -> str:
+    """Critical Michelson syntax rules for modern Tezos protocols (Mumbai+)."""
+    return """# Critical Michelson Rules — Modern Tezos Protocols
+
+## Rule 1: SUB is DEPRECATED
+- NEVER use `SUB` to subtract integers (int/nat).
+- SUB was removed in modern Tezos protocols (Mumbai onwards).
+- Always use: SWAP ; NEG ; ADD
+  Example: to compute (storage - param) with stack [ param : storage ]:
+    SWAP   -> [ storage : param ]
+    NEG    -> [ storage : -param ]
+    ADD    -> [ storage - param ]
+
+## Rule 2: Stack balance in IF_LEFT / IF / IF_NONE branches
+- ALL branches of a conditional MUST end with exactly the same stack.
+- Count stack elements at entry and exit of every branch.
+- Reset branch example receiving [ unit : int ] and leaving [ int ]:
+    DROP        -> removes unit -> [ int ]
+    DROP        -> removes int  -> []
+    PUSH int 0  -> [ int ]      ← final stack is [ int ] in all branches
+
+## Rule 3: Braces and semicolons syntax
+- The `code { ... }` block does NOT have a semicolon at the end.
+- IF_LEFT branches do NOT have a semicolon between them:
+    CORRECT: IF_LEFT { instruction_a } { instruction_b }
+    WRONG:   IF_LEFT { instruction_a } ; { instruction_b }
+- Instructions inside a block are separated by ` ; `
+- The LAST instruction in a block does NOT have ` ; ` before `}`
+
+## Rule 4: Mandatory contract structure
+- Every contract MUST have exactly:
+    parameter <type> ;
+    storage <type> ;
+    code { <instructions> }
+- Initial stack is always: [ (parameter, storage) ]
+- Final stack MUST always be: [ (list operation, new_storage) ]
+- Standard closing pattern:
+    NIL operation ;
+    PAIR
+
+## Rule 5: UNPAIR instead of manual CAR/CDR
+- Use UNPAIR to split the initial (parameter, storage) pair:
+    CORRECT: UNPAIR  -> [ parameter : storage ]
+    VERBOSE: CAR / CDR (still work but less idiomatic)
+
+## Rule 6: Valid arithmetic in modern protocols
+- int + int  -> ADD
+- int - int  -> SWAP ; NEG ; ADD  (do NOT use SUB)
+- int * int  -> MUL
+- abs(int)   -> ABS  (returns nat)
+- neg(int)   -> NEG
+- nat -> int -> INT
+- int -> nat -> ISNAT  (returns option nat)
+
+## Correct Contract Example (Counter: add, subtract, reset)
+
+parameter (or int (or int unit)) ;
+storage int ;
+code { UNPAIR ;
+       IF_LEFT { ADD }
+               { IF_LEFT { SWAP ; NEG ; ADD }
+                         { DROP ; DROP ; PUSH int 0 } } ;
+       NIL operation ;
+       PAIR }
+
+Entrypoints:
+- Left <n>           -> adds n to storage
+- Right (Left <n>)   -> subtracts n from storage
+- Right (Right Unit) -> resets storage to 0
+"""
+
+
 
 @mcp.resource("michelson://cheatsheet")
 def michelson_cheatsheet() -> str:
@@ -198,25 +271,110 @@ Proporciona una explicación clara y detallada."""
 
 @mcp.prompt()
 def generate_michelson_contract(description: str) -> str:
-    """
-    Genera un prompt para crear un contrato Michelson desde una descripción.
-    
-    Args:
-        description: Descripción en lenguaje natural del contrato deseado
-    """
     return f"""Eres un experto desarrollador de contratos inteligentes en Michelson para Tezos.
 
 Crea un contrato Michelson que implemente lo siguiente:
 {description}
 
-Recuerda:
-- La estructura obligatoria: parameter, storage, code
-- El contrato comienza con [ (parameter, storage) : [] ]
-- Debe terminar con [ (list operation, storage) : [] ]
-- Usa anotaciones %nombre para los entrypoints
-- Incluye comentarios con # explicando cada sección importante
 
-Proporciona el código completo y funcional."""
+PROHIBICIONES ABSOLUTAS — NO NEGOCIABLES
+
+1. NUNCA escribas la instrucción `SUB`. Está ELIMINADA del protocolo.
+   - Para restar SIEMPRE escribe: `SWAP ; NEG ; ADD`
+   - No hay excepciones. Aunque parezca correcto, SUB causará error fatal.
+
+2. NUNCA termines el bloque `code {{ ... }}` con punto y coma.
+
+3. NUNCA pongas punto y coma entre ramas de IF_LEFT:
+IF_LEFT {{ A }} ; {{ B }}
+IF_LEFT {{ A }} {{ B }}
+
+
+REGLAS OBLIGATORIAS
+
+- Estructura: parameter <tipo> ; / storage <tipo> ; / code {{ ... }}
+- Stack inicial: [ (parameter, storage) ] — usa UNPAIR para separar
+- Stack final SIEMPRE: [ (list operation, storage) ] — cierra con NIL operation ; PAIR
+- En ramas IF_LEFT: TODAS deben terminar con el mismo stack
+  - Si una rama recibe [ unit : int ], necesita DROP ; DROP ; PUSH int <val> para dejar [ int ]
+  - Si una rama recibe [ int : int ], ADD o SWAP ; NEG ; ADD deja [ int ] ✓
+
+
+PATRÓN DE RESTA — COPIA EXACTAMENTE
+
+Para restar el parámetro del storage con stack [ param : storage ]:
+  SWAP       → [ storage : param ]
+  NEG        → [ storage : -param ]
+  ADD        → [ (storage - param) ]   ← resultado correcto
+
+
+EJEMPLO VALIDADO Y FUNCIONAL
+
+parameter (or int (or int unit)) ;
+storage int ;
+code {{ UNPAIR ;
+       IF_LEFT {{ ADD }}
+               {{ IF_LEFT {{ SWAP ; NEG ; ADD }}
+                          {{ DROP ; DROP ; PUSH int 0 }} }} ;
+       NIL operation ;
+       PAIR }}
+
+Este contrato fue verificado con octez-client. Úsalo como referencia exacta.
+
+Proporciona ÚNICAMENTE el código completo. Antes de responder, verifica mentalmente
+que no aparece la palabra SUB en ningún lugar del código generado."""
+
+
+@mcp.prompt()
+def fix_michelson_bug(code: str, error: str) -> str:
+    """
+    Prompt to guide the LLM to fix a bug in a Michelson contract.
+
+    Args:
+        code: Michelson code containing the bug
+        error: Error description or failure message
+    """
+    return f"""You are an expert in Michelson and Tezos smart contracts.
+
+The following contract has a bug or incorrect behavior:
+
+```michelson
+{code}
+Reported error:
+{error}
+
+CRITICAL RULES to apply in the fix:
+
+NEVER use SUB — replace with SWAP ; NEG ; ADD
+
+ALL branches of IF_LEFT / IF / IF_NONE must end with the same stack shape
+
+No semicolon between IF_LEFT branches: IF_LEFT {{ ... }} {{ ... }}
+
+Final stack MUST be: [ (list operation, storage) ]
+
+Please:
+
+Identify the root cause of the problem
+
+Explain why it occurs in terms of the stack
+
+Provide the complete corrected code
+
+Explain what changed and why it now works"""
+
+## 4. Agrega un tool para validar estas reglas específicamente
+@mcp.tool()
+def lint_contract(michelson_code: str) -> dict:
+    """
+    Checks a Michelson contract against modern protocol rules:
+    deprecated instructions, stack balance, syntax issues.
+
+    Args:
+        michelson_code: Full Michelson contract code
+    """
+    from michelson_tools import lint_modern_rules
+    return lint_modern_rules(michelson_code)
 
 
 if __name__ == "__main__":
