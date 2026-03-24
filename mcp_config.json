@@ -1,8 +1,8 @@
 {
     "mcpServers": {
       "michelson": {
-        "command": "python",
-        "args": ["DEV_MCP_ASSISTANT/server.py"]
+        "command": "PATH_TO_PYTHON/venv/bin/python",
+        "args": ["PATH_TO_PYTHON/venv/bin/python"]
       }
     }
   }

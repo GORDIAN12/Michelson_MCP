@@ -1,0 +1,8 @@
+parameter (or int (or int unit)) ;
+storage int ;
+code { UNPAIR ;
+       IF_LEFT { ADD }
+               { IF_LEFT { SWAP ; NEG ; ADD }
+                         { DROP ; DROP ; PUSH int 0 } } ;
+       NIL operation ;
+       PAIR }
