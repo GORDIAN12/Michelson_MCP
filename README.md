@@ -11,7 +11,7 @@ In this case, the server will give any LLM capabilities to work with Michelson:
 # create virtual enviroment
 ```python -m venv ./venv
 source ./venv/bin/activate
-´´´ 
+
 
 pip install mcp fastmcp pytezos
 
@@ -19,3 +19,10 @@ pip install mcp fastmcp pytezos
 python server.py
 
 # Test with MCP Inspector (oficial debugging tool)
+npx @modelcontextprotocol/inspector python server.py
+```
+
+|Tool|Function|
+|-------------------|
+|explain_instruction|explain any instruction Michelson|
+|explain_type       |describe data types (int,nat,big_map,etc)|
