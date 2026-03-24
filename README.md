@@ -77,3 +77,11 @@ octez-client --mode mockup --base-dir /tmp/mockup run script /work/substract.tz 
 ```
 octez-client --mode mockup --base-dir /tmp/mockup run script /work/counter.tz on storage 10 and input 'Left 5'
 ```
+
+<!--
+Source - https://stackoverflow.com/q/41604263
+Posted by zjffdu, modified by community. See post 'Timeline' for change history
+Retrieved 2026-03-24, License - CC BY-SA 4.0
+-->
+
+![image](screens/prod.png)
