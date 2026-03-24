@@ -9,8 +9,9 @@ In this case, the server will give any LLM capabilities to work with Michelson:
 - Explain stack instructions  
 
 # create virtual enviroment
-python -m venv ./venv
+```python -m venv ./venv
 source ./venv/bin/activate
+´´´ 
 
 pip install mcp fastmcp pytezos
 
