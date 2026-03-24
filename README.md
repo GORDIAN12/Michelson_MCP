@@ -22,7 +22,17 @@ python server.py
 npx @modelcontextprotocol/inspector python server.py
 ```
 
-|Tool|Function|
-|-------------------|
-|explain_instruction|explain any instruction Michelson|
-|explain_type       |describe data types (int,nat,big_map,etc)|
+|Tool               |Function                                   |
+|-------------------|-------------------------------------------|
+|explain_instruction|Explain any instruction Michelson          |
+|explain_type       |Describe data types (int,nat,big_map,etc)  |
+|run_stack_simulation| simulate stack execution step by step    |
+|validate_contract   | valdate the structure basic of a contract|  	
+|list_instructions   | List all instructions by category        |
+|get_template        | Return ready-to-use contract templates   | 
+|search_instructions |search instructions by keywords           |
+|create contract from description |	Prompt create_contract_from_scratch|
+|fix a specific bug	|Tool fix_contract + Prompt fix_michelson_bug|
+|improve existing code	|Tool improve_contract + Prompt improve_michelson_code|
+|deep bug/warnings analysis |	Tool analyze_contract|
+|security audit|	Prompt review_contract_security |
