@@ -50,3 +50,30 @@ cursor
   }
 }
 ```
+
+### proof with michelson Tezos with docker
+
+```
+docker run -it --rm --entrypoint /bin/sh -v $PWD:/work tezos/tezos:latest
+```
+## Testing with language michelson
+
+### Product
+```
+octez-client --mode mockup --base-dir /tmp/mockup \
+  run script /work/product.tz \
+  on storage 0 \
+  and input '(Pair 3 4)'
+```
+
+### Substract
+
+``` 
+octez-client --mode mockup --base-dir /tmp/mockup run script /work/substract.tz on storage 10 and input '5'
+```
+
+### Addition
+
+```
+octez-client --mode mockup --base-dir /tmp/mockup run script /work/counter.tz on storage 10 and input 'Left 5'
+```

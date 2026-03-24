@@ -431,3 +431,75 @@ code {
         "available_templates": list(templates.keys()),
         "message": f"Plantilla '{template_name}' no encontrada."
     }
+
+def lint_modern_rules(code: str) -> dict:
+    """Validates a contract against modern Tezos protocol rules."""
+    errors = []
+    warnings = []
+
+    # Rule 1: SUB is deprecated
+    if " SUB" in code or "\tSUB" in code or code.strip().startswith("SUB"):
+        errors.append({
+            "rule": "SUB_DEPRECATED",
+            "severity": " Critical",
+            "message": "SUB is deprecated in modern Tezos protocols (Mumbai+)",
+            "fix": "Replace SUB with: SWAP ; NEG ; ADD"
+        })
+
+    # Rule 2: IF_LEFT with semicolon between branches
+    import re
+    if re.search(r"IF_LEFT\s*\{[^}]*\}\s*;", code):
+        errors.append({
+            "rule": "IF_LEFT_SEMICOLON",
+            "severity": " Critical",
+            "message": "Semicolon found between IF_LEFT branches",
+            "fix": "Remove semicolon: IF_LEFT { ... } { ... }"
+        })
+
+    # Rule: CAR/CDR after UNPAIR is wrong
+    if "UNPAIR" in code and "CAR" in code:
+        lines = code.split("\n")
+        for i, line in enumerate(lines):
+            if "UNPAIR" in line:
+                next_instructions = " ".join(lines[i+1:i+4])
+                if "CAR" in next_instructions or "CDR" in next_instructions:
+                    errors.append({
+                        "rule": "CAR_CDR_AFTER_UNPAIR",
+                        "severity": "Critical",
+                        "message": "CAR/CDR used after UNPAIR — UNPAIR already splits the pair",
+                        "fix": "Remove CAR/CDR after UNPAIR, or replace UNPAIR with CAR/CDR directly"
+                    })
+
+
+
+    # Rule 4: Missing NIL operation ; PAIR at end
+    if "NIL operation" not in code:
+        errors.append({
+            "rule": "MISSING_NIL_PAIR",
+            "severity": "Critical",
+            "message": "Missing NIL operation ; PAIR — contract won't produce valid final stack",
+            "fix": "Add at the end: NIL operation ; PAIR"
+        })
+
+    # Rule 5: Missing mandatory sections
+    structure = validate_contract_structure(code)
+    if not structure["valid"]:
+        for issue in structure["issues"]:
+            errors.append({
+                "rule": "STRUCTURE",
+                "severity": " Critical",
+                "message": issue,
+                "fix": structure["suggestions"][structure["issues"].index(issue)]
+                       if structure["issues"].index(issue) < len(structure["suggestions"]) else ""
+            })
+
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors,
+        "warnings": warnings,
+        "total_errors": len(errors),
+        "total_warnings": len(warnings),
+        "summary": "Contract passes all modern protocol rules"
+                   if len(errors) == 0
+                   else f" {len(errors)} critical error(s) found"
+    }
