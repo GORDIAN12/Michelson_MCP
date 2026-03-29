@@ -79,5 +79,4 @@ octez-client --mode mockup --base-dir /tmp/mockup run script /work/counter.tz on
 ```
 
 
-
 ![image](screens/prod.png)
