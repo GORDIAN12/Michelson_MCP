@@ -10,11 +10,203 @@ from michelson_tools import (
     MICHELSON_TYPES
 )
 
+from tezos_rpc import (
+    get_network_info,
+    get_account_info,
+    get_balance,
+    get_contract_storage,
+    get_contract_code,
+    get_contract_entrypoints,
+    get_contract_big_map,
+    get_contract_operations,
+    get_operation_details,
+    get_block_info,
+    search_contracts,
+    get_contract_metadata,
+)
+
+
 mcp = FastMCP("Michelson Language Server")
 
 # ─────────────────────────────────────────────
 # TOOLS
 # ─────────────────────────────────────────────
+
+@mcp.tool()
+def network_info(network: str = "ghostnet") -> dict:
+    """
+    Returns current Tezos network status: block level, protocol and timestamp.
+
+    Args:
+        network: Network to query. Options: mainnet, ghostnet (default: ghostnet)
+    """
+    return get_network_info(network)
+
+
+@mcp.tool()
+def block_info(block: str = "head", network: str = "ghostnet") -> dict:
+    """
+    Returns information about a specific block.
+
+    Args:
+        block: Block level or hash, use 'head' for the latest (default: head)
+        network: Network to query (default: ghostnet)
+    """
+    return get_block_info(block, network)
+
+
+# ─────────────────────────────────────────────
+# ACCOUNT TOOLS
+# ─────────────────────────────────────────────
+
+@mcp.tool()
+def account_info(address: str, network: str = "ghostnet") -> dict:
+    """
+    Returns balance and account info for any Tezos address (tz1... or KT1...).
+
+    Args:
+        address: Tezos address (tz1... implicit or KT1... contract)
+        network: Network to query (default: ghostnet)
+    """
+    return get_account_info(address, network)
+
+
+@mcp.tool()
+def account_balance(address: str, network: str = "ghostnet") -> dict:
+    """
+    Returns the balance of a Tezos address in mutez and tez.
+
+    Args:
+        address: Tezos address
+        network: Network to query (default: ghostnet)
+    """
+    return get_balance(address, network)
+
+
+# ─────────────────────────────────────────────
+# CONTRACT TOOLS
+# ─────────────────────────────────────────────
+
+@mcp.tool()
+def contract_storage(address: str, network: str = "ghostnet") -> dict:
+    """
+    Returns the current storage of a deployed Tezos smart contract.
+
+    Args:
+        address: Contract address (KT1...)
+        network: Network to query (default: ghostnet)
+    """
+    return get_contract_storage(address, network)
+
+
+@mcp.tool()
+def contract_code(address: str, network: str = "ghostnet") -> dict:
+    """
+    Returns the Micheline code of a deployed contract (parameter, storage type, code).
+
+    Args:
+        address: Contract address (KT1...)
+        network: Network to query (default: ghostnet)
+    """
+    return get_contract_code(address, network)
+
+
+@mcp.tool()
+def contract_entrypoints(address: str, network: str = "ghostnet") -> dict:
+    """
+    Returns all entrypoints of a deployed contract with their types.
+
+    Args:
+        address: Contract address (KT1...)
+        network: Network to query (default: ghostnet)
+    """
+    return get_contract_entrypoints(address, network)
+
+
+@mcp.tool()
+def contract_big_map(
+    address: str,
+    big_map_id: int,
+    key: str = "",
+    network: str = "ghostnet"
+) -> dict:
+    """
+    Returns big_map data for a contract.
+
+    Args:
+        address: Contract address (KT1...)
+        big_map_id: Numeric ID of the big_map
+        key: Specific key to look up (optional, returns first 20 entries if empty)
+        network: Network to query (default: ghostnet)
+    """
+    return get_contract_big_map(address, big_map_id, key or None, network)
+
+
+@mcp.tool()
+def contract_operations(
+    address: str,
+    limit: int = 10,
+    network: str = "ghostnet"
+) -> dict:
+    """
+    Returns the last N transactions involving a contract.
+
+    Args:
+        address: Contract address (KT1...)
+        limit: Number of operations to return (default: 10, max: 50)
+        network: Network to query (default: ghostnet)
+    """
+    return get_contract_operations(address, min(limit, 50), network)
+
+
+@mcp.tool()
+def contract_metadata(address: str, network: str = "ghostnet") -> dict:
+    """
+    Returns contract metadata: alias, creator, activity stats from TzKT explorer.
+
+    Args:
+        address: Contract address (KT1...)
+        network: Network to query (default: ghostnet)
+    """
+    return get_contract_metadata(address, network)
+
+
+# ─────────────────────────────────────────────
+# OPERATION TOOLS
+# ─────────────────────────────────────────────
+
+@mcp.tool()
+def operation_details(op_hash: str, network: str = "ghostnet") -> dict:
+    """
+    Returns full details of a specific operation by its hash.
+
+    Args:
+        op_hash: Operation hash (o...)
+        network: Network to query (default: ghostnet)
+    """
+    return get_operation_details(op_hash, network)
+
+
+# ─────────────────────────────────────────────
+# SEARCH TOOLS
+# ─────────────────────────────────────────────
+
+@mcp.tool()
+def search_deployed_contracts(
+    keyword: str,
+    network: str = "ghostnet",
+    limit: int = 10
+) -> dict:
+    """
+    Searches deployed contracts by alias or address keyword.
+
+    Args:
+        keyword: Search term (contract alias or partial address)
+        network: Network to query (default: ghostnet)
+        limit: Max number of results (default: 10)
+    """
+    return search_contracts(keyword, network, limit)
+
 
 @mcp.tool()
 def explain_instruction(instruction: str) -> dict:
